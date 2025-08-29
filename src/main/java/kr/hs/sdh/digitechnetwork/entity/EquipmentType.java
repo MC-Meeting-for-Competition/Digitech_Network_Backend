@@ -1,9 +1,7 @@
 package kr.hs.sdh.digitechnetwork.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Collection;
 
@@ -11,6 +9,8 @@ import java.util.Collection;
 @Table(name = "equipment_types")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class EquipmentType extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

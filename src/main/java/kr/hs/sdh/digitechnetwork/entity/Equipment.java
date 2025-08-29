@@ -1,9 +1,7 @@
 package kr.hs.sdh.digitechnetwork.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
 enum EquipmentStatus {
@@ -25,6 +23,8 @@ enum EquipmentStatus {
 @Table(name = "equipments")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class Equipment extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
