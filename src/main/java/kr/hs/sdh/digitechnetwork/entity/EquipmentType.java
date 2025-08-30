@@ -5,6 +5,13 @@ import lombok.*;
 
 import java.util.Collection;
 
+/**
+ * 기자재 품목 엔티티
+ *
+ * @since 2025.08.29
+ * @author yunjisang sdh230308@sdh.hs.kr
+ * @version 0.0.1
+ */
 @Entity
 @Table(name = "equipment_types")
 @Getter

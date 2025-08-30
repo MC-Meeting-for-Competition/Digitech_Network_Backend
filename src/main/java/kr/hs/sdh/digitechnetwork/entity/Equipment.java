@@ -3,6 +3,13 @@ package kr.hs.sdh.digitechnetwork.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * 기자재의 상태를 ENUM 만들어 데이터베이스에 저장
+ *
+ * @since 2025.08.29
+ * @author yunjisang - sdh230308@sdh.hs.kr
+ * @version 0.0.1
+ */
 @Getter
 enum EquipmentStatus {
     AVAILABLE("대여 가능한 기자재"),
@@ -19,6 +26,13 @@ enum EquipmentStatus {
     }
 }
 
+/**
+ * Equipment 엔티티
+ *
+ * @since 2025.08.29
+ * @author yunjisang sdh230308@sdh.hs.kr
+ * @version 0.0.1
+ */
 @Entity
 @Table(name = "equipments")
 @Getter
@@ -32,16 +46,16 @@ public class Equipment extends BaseEntity {
     private Long id;
 
     @Column(unique = true)
-    private String identifier;
+    private String identifier; // 관리자가 입력한 식별자
 
     @Column(nullable = false)
-    private Boolean isPublic;
+    private Boolean isPublic; // 사용자에게 공개 여부
 
     @Enumerated(EnumType.STRING)
-    private EquipmentStatus status;
+    private EquipmentStatus status; // 기자재 상태
 
     @Column(nullable = true)
-    private String cautionMessage;
+    private String cautionMessage; // 주의사항 메시지
 
     Equipment setStatus(EquipmentStatus status) {
         this.status = status;
@@ -61,5 +75,15 @@ public class Equipment extends BaseEntity {
     Equipment setCautionMessage(String cautionMessage) {
         this.cautionMessage = cautionMessage;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "Equipment [" +
+                "id=" + id + ", " +
+                "identifier=" + identifier + ", " +
+                "isPublic=" + isPublic + ", " +
+                "status=" + status + ", " +
+                "cautionMessage=" + cautionMessage + "]";
     }
 }
