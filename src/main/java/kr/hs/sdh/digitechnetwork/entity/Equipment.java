@@ -57,6 +57,10 @@ public class Equipment extends BaseEntity {
     @Column(nullable = true)
     private String cautionMessage; // 주의사항 메시지
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "equipment_type_id")
+    private EquipmentType equipmentType;
+
     Equipment setStatus(EquipmentStatus status) {
         this.status = status;
         return this;
