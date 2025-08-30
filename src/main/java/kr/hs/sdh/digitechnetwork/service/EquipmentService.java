@@ -3,6 +3,8 @@ package kr.hs.sdh.digitechnetwork.service;
 import kr.hs.sdh.digitechnetwork.entity.Equipment;
 import kr.hs.sdh.digitechnetwork.entity.EquipmentType;
 import kr.hs.sdh.digitechnetwork.enums.EquipmentStatus;
+import kr.hs.sdh.digitechnetwork.exception.DuplicateResourceException;
+import kr.hs.sdh.digitechnetwork.exception.ResourceNotFoundException;
 import kr.hs.sdh.digitechnetwork.repository.EquipmentRepository;
 import kr.hs.sdh.digitechnetwork.repository.EquipmentTypeRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +46,7 @@ public class EquipmentService {
         
         // 식별자 중복 검사
         if (equipmentRepository.existsByIdentifier(equipment.getIdentifier())) {
-            throw new IllegalArgumentException("이미 존재하는 식별자입니다: " + equipment.getIdentifier());
+            throw new DuplicateResourceException("Equipment", equipment.getIdentifier());
         }
         
         // 기본 상태 설정
@@ -74,12 +76,12 @@ public class EquipmentService {
         log.info("기자재 수정 시작: ID={}", id);
         
         Equipment existingEquipment = equipmentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 기자재입니다: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Equipment", id));
         
         // 식별자 변경 시 중복 검사
         if (!existingEquipment.getIdentifier().equals(updatedEquipment.getIdentifier()) &&
             equipmentRepository.existsByIdentifier(updatedEquipment.getIdentifier())) {
-            throw new IllegalArgumentException("이미 존재하는 식별자입니다: " + updatedEquipment.getIdentifier());
+            throw new DuplicateResourceException("Equipment", updatedEquipment.getIdentifier());
         }
         
         // 기자재 정보 업데이트
@@ -106,7 +108,7 @@ public class EquipmentService {
         log.info("기자재 상태 변경 시작: ID={}, 상태={}", id, status);
         
         Equipment equipment = equipmentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 기자재입니다: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Equipment", id));
         
         equipment.setStatus(status);
         Equipment savedEquipment = equipmentRepository.save(equipment);
@@ -126,7 +128,7 @@ public class EquipmentService {
         log.info("기자재 공개 설정 변경 시작: ID={}, 공개여부={}", id, isPublic);
         
         Equipment equipment = equipmentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 기자재입니다: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Equipment", id));
         
         equipment.setIsPublic(isPublic);
         Equipment savedEquipment = equipmentRepository.save(equipment);
@@ -144,7 +146,7 @@ public class EquipmentService {
         log.info("기자재 삭제 시작: ID={}", id);
         
         Equipment equipment = equipmentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 기자재입니다: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Equipment", id));
         
         // 논리적 삭제: 상태를 UNAVAILABLE로 변경
         equipment.setStatus(EquipmentStatus.UNAVAILABLE);
@@ -258,7 +260,7 @@ public class EquipmentService {
      */
     public EquipmentVersionHistory getEquipmentVersionHistory(Long id) {
         Equipment equipment = equipmentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 기자재입니다: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Equipment", id));
         
         return EquipmentVersionHistory.builder()
                 .equipmentId(equipment.getId())
