@@ -1,6 +1,7 @@
 package kr.hs.sdh.digitechnetwork.entity;
 
 import jakarta.persistence.*;
+import kr.hs.sdh.digitechnetwork.enums.UserType;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -28,20 +29,11 @@ public class Teacher extends User {
     @OneToMany(mappedBy = "teacher")
     private List<TeacherRentHistory> teacherRentHistoryArrayList = new ArrayList<>();
 
-    //   <----------- UserDetails Methods ----------->
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
-    }
-
-    @Override
-    public String getPassword() {
-        return hashedPassword;
-    }
-
-    @Override
-    public String getUsername() {
-        return email; // 인증 ID로 email 사용
+    public Teacher(String name, String hashedPassword, String email, String phoneNumber) {
+        this.name = name;
+        this.hashedPassword = hashedPassword;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.role = UserType.TEACHER;
     }
 }

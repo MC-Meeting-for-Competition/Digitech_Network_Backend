@@ -15,6 +15,7 @@ import java.util.List;
 public class RentHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "rent_histories_id")
     private Long id;
 
     @OneToMany(mappedBy = "rentHistory")

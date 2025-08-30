@@ -21,6 +21,7 @@ import java.util.Collection;
 public class EquipmentType extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "equipment_type_id")
     private Long id;
 
     @Column(nullable = false, unique = true)

@@ -24,7 +24,7 @@ public class Student extends User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "student_id")
-    private Long studentId;
+    private Long id;
 
     @Column
     private String bio;
@@ -64,22 +64,5 @@ public class Student extends User {
     public Student changeBio(String bio) {
         this.bio = bio;
         return this;
-    }
-
-//   <----------- UserDetails Methods ----------->
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
-    }
-
-    @Override
-    public String getPassword() {
-        return hashedPassword;
-    }
-
-    @Override
-    public String getUsername() {
-        return email; // 인증 ID로 email 사용
     }
 }
