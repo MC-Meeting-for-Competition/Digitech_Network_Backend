@@ -39,23 +39,28 @@ public class Equipment extends BaseEntity {
     @JoinColumn(name = "equipment_type_id")
     private EquipmentType equipmentType;
 
-    Equipment setStatus(EquipmentStatus status) {
+    public Equipment setStatus(EquipmentStatus status) {
         this.status = status;
         return this;
     }
 
-    Equipment setPublic(Boolean isPublic) {
+    public Equipment setIsPublic(Boolean isPublic) {
         this.isPublic = isPublic;
         return this;
     }
 
-    Equipment setIdentifier(String identifier) {
+    public Equipment setIdentifier(String identifier) {
         this.identifier = identifier;
         return this;
     }
 
-    Equipment setCautionMessage(String cautionMessage) {
+    public Equipment setCautionMessage(String cautionMessage) {
         this.cautionMessage = cautionMessage;
+        return this;
+    }
+
+    public Equipment setEquipmentType(EquipmentType equipmentType) {
+        this.equipmentType = equipmentType;
         return this;
     }
 
