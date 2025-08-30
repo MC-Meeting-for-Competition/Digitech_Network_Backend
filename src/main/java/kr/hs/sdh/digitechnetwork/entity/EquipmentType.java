@@ -3,51 +3,56 @@ package kr.hs.sdh.digitechnetwork.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * 기자재 품목 엔티티
- *
- * @since 2025.08.29
- * @author yunjisang sdh230308@sdh.hs.kr
- * @version 0.0.1
- */
 @Entity
 @Table(name = "equipment_types")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
 public class EquipmentType extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "equipment_type_id")
+    @Setter
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true, nullable = false)
     private String type;
 
-    @Column(nullable = true)
-    private String imageUrl;
+    @Column
+    private String description;
 
-    @Column(nullable = false)
-    private Boolean isPublic;
+    @Column
+    private Boolean isPublic = true;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "equipments_id")
-    Collection<Equipment> equipmentList;
+    @OneToMany(mappedBy = "equipmentType", fetch = FetchType.LAZY)
+    private List<Equipment> equipmentList = new ArrayList<>();
 
-    public EquipmentType(String type) {
+    public void setType(String type) {
         this.type = type;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder("[" + id + "]" + type);
-        for (Equipment equipment : equipmentList) {
-            result.append("\n").append(equipment.toString());
-        }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-        return result.toString();
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public void setEquipmentList(List<Equipment> equipmentList) {
+        this.equipmentList = equipmentList;
+    }
+
+    // 편의 메서드
+    public int getEquipmentCount() {
+        return equipmentList != null ? equipmentList.size() : 0;
+    }
+
+    public boolean hasEquipment() {
+        return equipmentList != null && !equipmentList.isEmpty();
     }
 }

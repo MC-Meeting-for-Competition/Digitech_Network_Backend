@@ -4,73 +4,83 @@ import jakarta.persistence.*;
 import kr.hs.sdh.digitechnetwork.enums.EquipmentStatus;
 import lombok.*;
 
-/**
- * Equipment 엔티티
- *
- * @since 2025.08.29
- * @author yunjisang sdh230308@sdh.hs.kr
- * @version 0.0.1
- */
 @Entity
 @Table(name = "equipments")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
 public class Equipment extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "equipments_id")
+    @Column(name = "equipment_id")
+    @Setter
     private Long id;
 
-    @Column(unique = true)
-    private String identifier; // 관리자가 입력한 식별자
+    @Column(unique = true, nullable = false)
+    private String identifier;
 
-    @Column(nullable = false)
-    private Boolean isPublic; // 사용자에게 공개 여부
+    @Column
+    private String name;
+
+    @Column
+    private String description;
 
     @Enumerated(EnumType.STRING)
-    private EquipmentStatus status; // 기자재 상태
+    private EquipmentStatus status = EquipmentStatus.AVAILABLE;
 
-    @Column(nullable = true)
-    private String cautionMessage; // 주의사항 메시지
+    @Column
+    private Boolean isPublic = true;
+
+    @Column
+    private String cautionMessage;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "equipment_type_id")
     private EquipmentType equipmentType;
 
-    public Equipment setStatus(EquipmentStatus status) {
-        this.status = status;
-        return this;
-    }
-
-    public Equipment setIsPublic(Boolean isPublic) {
-        this.isPublic = isPublic;
-        return this;
-    }
-
-    public Equipment setIdentifier(String identifier) {
+    public void setIdentifier(String identifier) {
         this.identifier = identifier;
-        return this;
     }
 
-    public Equipment setCautionMessage(String cautionMessage) {
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setStatus(EquipmentStatus status) {
+        this.status = status;
+    }
+
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public void setCautionMessage(String cautionMessage) {
         this.cautionMessage = cautionMessage;
-        return this;
     }
 
-    public Equipment setEquipmentType(EquipmentType equipmentType) {
+    public void setEquipmentType(EquipmentType equipmentType) {
         this.equipmentType = equipmentType;
-        return this;
     }
 
-    @Override
-    public String toString() {
-        return "Equipment [" +
-                "id=" + id + ", " +
-                "identifier=" + identifier + ", " +
-                "isPublic=" + isPublic + ", " +
-                "status=" + status + ", " +
-                "cautionMessage=" + cautionMessage + "]";
+    // 편의 메서드
+    public String getTypeName() {
+        return equipmentType != null ? equipmentType.getType() : "미분류";
+    }
+
+    public boolean isAvailable() {
+        return EquipmentStatus.AVAILABLE.equals(this.status);
+    }
+
+    public boolean isRented() {
+        return EquipmentStatus.RENT.equals(this.status);
+    }
+
+    public boolean isBroken() {
+        return EquipmentStatus.BROKEN.equals(this.status);
     }
 }
