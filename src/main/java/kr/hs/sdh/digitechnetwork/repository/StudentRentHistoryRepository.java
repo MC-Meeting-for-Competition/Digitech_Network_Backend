@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,4 +29,12 @@ public interface StudentRentHistoryRepository extends JpaRepository<StudentRentH
     // 특정 대여 이력의 학생 수 조회
     @Query("SELECT COUNT(srh) FROM StudentRentHistory srh WHERE srh.rentHistory.id = :rentHistoryId")
     long countByRentHistoryId(@Param("rentHistoryId") Long rentHistoryId);
+    
+    // 특정 기간의 학생 대여 이력 조회
+    @Query("SELECT srh FROM StudentRentHistory srh WHERE srh.createdAt BETWEEN :startDate AND :endDate ORDER BY srh.createdAt DESC")
+    List<StudentRentHistory> findByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    // 특정 학생의 특정 기간 대여 이력 조회
+    @Query("SELECT srh FROM StudentRentHistory srh WHERE srh.student.id = :studentId AND srh.createdAt BETWEEN :startDate AND :endDate ORDER BY srh.createdAt DESC")
+    List<StudentRentHistory> findByStudentIdAndDateRange(@Param("studentId") Long studentId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }

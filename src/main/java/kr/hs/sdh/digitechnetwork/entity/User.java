@@ -2,19 +2,28 @@ package kr.hs.sdh.digitechnetwork.entity;
 
 import jakarta.persistence.*;
 import kr.hs.sdh.digitechnetwork.enums.UserType;
-import lombok.Getter;
+import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.Collections;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-@MappedSuperclass
+import java.util.Collection;
+import java.util.Collections;
+
+@Entity
+@Table(name = "users")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class User extends BaseEntity implements UserDetails {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
+    private Long id;
+
     @Column(nullable = false)
     protected String name;
 
@@ -29,6 +38,9 @@ public class User extends BaseEntity implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     protected UserType role;
+
+    @Column(nullable = false)
+    protected Boolean isEnabled = true;
 
     // UserDetails 인터페이스 구현
     @Override

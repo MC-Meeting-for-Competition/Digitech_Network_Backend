@@ -1,14 +1,9 @@
 package kr.hs.sdh.digitechnetwork.entity;
 
 import jakarta.persistence.*;
-import kr.hs.sdh.digitechnetwork.enums.UserType;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 @Entity
@@ -17,11 +12,15 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Builder
-public class Teacher extends User {
+public class Teacher extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "teacher_id")
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column
     private String bio;
@@ -30,10 +29,23 @@ public class Teacher extends User {
     private List<TeacherRentHistory> teacherRentHistoryArrayList = new ArrayList<>();
 
     public Teacher(String name, String hashedPassword, String email, String phoneNumber) {
-        this.name = name;
-        this.hashedPassword = hashedPassword;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.role = UserType.TEACHER;
+        // User 생성 로직은 Service 계층에서 처리
+    }
+
+    // User 정보에 대한 편의 메서드
+    public String getName() {
+        return user != null ? user.getName() : null;
+    }
+
+    public String getEmail() {
+        return user != null ? user.getEmail() : null;
+    }
+
+    public String getPhoneNumber() {
+        return user != null ? user.getPhoneNumber() : null;
+    }
+
+    public String getRole() {
+        return user != null ? user.getRole().toString() : null;
     }
 }

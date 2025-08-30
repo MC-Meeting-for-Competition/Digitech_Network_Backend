@@ -3,24 +3,15 @@ package kr.hs.sdh.digitechnetwork.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name = "rent_histories")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class RentHistory {
+public class RentHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "rent_histories_id")
     private Long id;
-
-    @OneToMany(mappedBy = "rentHistory")
-    private List<StudentRentHistory> studentRentHistory = new ArrayList<>();
-
-    @OneToMany(mappedBy = "rentHistory")
-    private List<TeacherRentHistory> teacherRentHistory = new ArrayList<>();
 }

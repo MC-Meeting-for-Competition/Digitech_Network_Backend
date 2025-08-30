@@ -28,11 +28,13 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Optional<Student> findByGradeAndClassroomAndStudentNumber(
         Integer grade, Integer classroom, Integer studentNumber);
     
-    // 이름으로 학생 찾기
-    List<Student> findByNameContaining(String name);
+    // User와의 관계를 통해 이름으로 학생 찾기
+    @Query("SELECT s FROM Student s WHERE s.user.name LIKE %:name%")
+    List<Student> findByUserNameContaining(@Param("name") String name);
     
-    // 이메일로 학생 찾기
-    Optional<Student> findByEmail(String email);
+    // User와의 관계를 통해 이메일로 학생 찾기
+    @Query("SELECT s FROM Student s WHERE s.user.email = :email")
+    Optional<Student> findByUserEmail(@Param("email") String email);
     
     // 특정 학년의 학생 수 조회
     @Query("SELECT COUNT(s) FROM Student s WHERE s.grade = :grade")

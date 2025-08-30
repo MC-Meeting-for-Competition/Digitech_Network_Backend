@@ -22,6 +22,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 사용자 타입별로 찾기
     List<User> findByRole(UserType role);
     
+    // 학생 사용자만 찾기 (JPQL 사용)
+    @Query("SELECT u FROM User u WHERE u.role = 'STUDENT'")
+    List<User> findStudents();
+    
+    // 교사 사용자만 찾기 (JPQL 사용)
+    @Query("SELECT u FROM User u WHERE u.role = 'TEACHER'")
+    List<User> findTeachers();
+    
     // 이름으로 사용자 찾기
     List<User> findByNameContaining(String name);
     
@@ -31,4 +39,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 활성화된 사용자만 찾기
     @Query("SELECT u FROM User u WHERE u.isEnabled = true")
     List<User> findActiveUsers();
+    
+    // 특정 타입의 활성화된 사용자 찾기
+    @Query("SELECT u FROM User u WHERE u.role = :role AND u.isEnabled = true")
+    List<User> findActiveUsersByRole(@Param("role") UserType role);
 }
