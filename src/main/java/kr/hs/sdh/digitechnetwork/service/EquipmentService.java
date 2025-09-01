@@ -10,7 +10,7 @@ import java.util.Optional;
 
 /**
  * Equipment 서비스 인터페이스
- * 기자재의 CRUD 및 버전 관리를 담당하는 서비스 계약
+ * 기자재의 CRUD 를 담당
  *
  * @since 2025.08.30
  * @author yunjisang sdh230308@sdh.hs.kr
