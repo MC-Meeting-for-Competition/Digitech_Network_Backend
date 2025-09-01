@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.hs.sdh.digitechnetwork.auth.GoogleOAuth;
 import kr.hs.sdh.digitechnetwork.dto.AuthResponseDto;
 import kr.hs.sdh.digitechnetwork.dto.GoogleOAuthRequestDto;
-import kr.hs.sdh.digitechnetwork.dto.GoogleOAuthResponseDto;
-import kr.hs.sdh.digitechnetwork.dto.GoogleUserInfoDto;
 import kr.hs.sdh.digitechnetwork.entity.Student;
 import kr.hs.sdh.digitechnetwork.entity.Teacher;
 import kr.hs.sdh.digitechnetwork.enums.UserType;
@@ -19,196 +17,224 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
-import java.util.Optional;
 
+/**
+ * Google OAuth 서비스 구현체
+ * Google OAuth 2.0 인증 플로우를 처리
+ *
+ * @since 2025.08.30
+ * @author yunjisang sdh230308@sdh.hs.kr
+ * @version 1.0.0
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GoogleOAuthServiceImpl implements GoogleOAuthService {
-    
+
     private final GoogleOAuth googleOAuth;
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    
+    private final JwtService jwtService;
+
     @Value("${google.oauth.client-id}")
     private String clientId;
-    
+
     @Value("${google.oauth.client-secret}")
     private String clientSecret;
-    
+
     @Value("${google.oauth.redirect-uri}")
     private String redirectUri;
-    
+
     @Override
     public String getAuthorizationUrl() {
         return googleOAuth.getRedirectUri();
     }
-    
+
     @Override
     @Transactional
     public AuthResponseDto authenticate(GoogleOAuthRequestDto requestDto) {
-        try {
-            // 1. Authorization code로 access token 요청
-            GoogleOAuthResponseDto tokenResponse = getAccessToken(requestDto.getCode());
-            
-            // 2. Access token으로 사용자 정보 요청
-            GoogleUserInfoDto userInfo = getUserInfo(tokenResponse.getAccessToken());
+        log.info("Google OAuth 인증 시작: code={}", requestDto.getCode());
 
-            // 3. 사용자 정보로 로그인 처리
-            return processUserLogin(userInfo, tokenResponse);
-            
+        try {
+            // 1. 액세스 토큰 요청
+            Map<String, Object> tokenResponse = getAccessToken(requestDto.getCode());
+            String accessToken = (String) tokenResponse.get("access_token");
+
+            // 2. 사용자 정보 요청
+            Map<String, Object> userInfo = getUserInfo(accessToken);
+
+            // 3. 사용자 로그인 처리
+            AuthResponseDto.UserInfoDto userInfoDto = processUserLogin(userInfo);
+
+            // 4. JWT 토큰 생성
+            Map<String, String> tokens = generateJwtTokens(userInfoDto);
+
+            // 5. 응답 생성
+            return createAuthResponse(tokens, userInfoDto);
+
         } catch (Exception e) {
-            log.error("Google OAuth authentication failed", e);
-            throw new BusinessException(ErrorCode.OAUTH_AUTHENTICATION_FAILED);
+            log.error("Google OAuth 인증 실패: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.OAUTH_AUTHENTICATION_FAILED, "Google OAuth 인증에 실패했습니다: " + e.getMessage());
         }
     }
-    
-    private GoogleOAuthResponseDto getAccessToken(String code) {
+
+    /**
+     * 액세스 토큰 요청
+     */
+    private Map<String, Object> getAccessToken(String code) {
         String tokenUrl = "https://oauth2.googleapis.com/token";
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("client_id", clientId);
-        body.add("client_secret", clientSecret);
-        body.add("code", code);
-        body.add("grant_type", "authorization_code");
-        body.add("redirect_uri", redirectUri);
+        String body = String.format(
+                "client_id=%s&client_secret=%s&code=%s&grant_type=authorization_code&redirect_uri=%s",
+                clientId, clientSecret, code, redirectUri
+        );
         
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-        
+        HttpEntity<String> request = new HttpEntity<>(body, headers);
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
         
         if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
-            throw new BusinessException(ErrorCode.OAUTH_TOKEN_REQUEST_FAILED);
+            throw new RuntimeException("액세스 토큰 요청 실패");
         }
         
-        Map responseBody = response.getBody();
-        
-        return GoogleOAuthResponseDto.builder()
-                .accessToken((String) responseBody.get("access_token"))
-                .refreshToken((String) responseBody.get("refresh_token"))
-                .tokenType((String) responseBody.get("token_type"))
-                .expiresIn(((Number) responseBody.get("expires_in")).longValue())
-                .scope((String) responseBody.get("scope"))
-                .idToken((String) responseBody.get("id_token"))
-                .build();
+        return response.getBody();
     }
-    
-    private GoogleUserInfoDto getUserInfo(String accessToken) {
+
+    /**
+     * 사용자 정보 요청
+     */
+    private Map getUserInfo(String accessToken) {
         String userInfoUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
         
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         
         HttpEntity<String> request = new HttpEntity<>(headers);
-        
-        ResponseEntity<Map> response = restTemplate.exchange(
-                userInfoUrl, 
-                HttpMethod.GET, 
-                request, 
-                Map.class
-        );
+        ResponseEntity<Map> response = restTemplate.exchange(userInfoUrl, HttpMethod.GET, request, Map.class);
         
         if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
-            throw new BusinessException(ErrorCode.OAUTH_USER_INFO_REQUEST_FAILED);
+            throw new RuntimeException("사용자 정보 요청 실패");
         }
         
-        Map userInfoMap = response.getBody();
+        return response.getBody();
+    }
 
-        if(!userInfoMap.get("hd").equals("sdh.hs.kr")) {
-            throw new BusinessException(ErrorCode.OAUTH_USER_INFO_REQUEST_FAILED);
-        }
+    /**
+     * 사용자 로그인 처리
+     */
+    private AuthResponseDto.UserInfoDto processUserLogin(Map<String, Object> userInfo) {
+        String email = (String) userInfo.get("email");
+        String name = (String) userInfo.get("name");
         
-        return GoogleUserInfoDto.builder()
-                .id((String) userInfoMap.get("id"))
-                .email((String) userInfoMap.get("email"))
-                .name((String) userInfoMap.get("name"))
-                .givenName((String) userInfoMap.get("given_name"))
-                .familyName((String) userInfoMap.get("family_name"))
-                .picture((String) userInfoMap.get("picture"))
-                .locale((String) userInfoMap.get("locale"))
-                .verifiedEmail((Boolean) userInfoMap.get("verified_email"))
+        log.info("사용자 로그인 처리: email={}, name={}", email, name);
+
+        // 기존 학생 사용자 확인
+        var studentOptional = studentRepository.findByEmail(email);
+        if (studentOptional.isPresent()) {
+            Student student = studentOptional.get();
+            log.info("기존 학생 사용자 로그인: {}", email);
+            return createUserInfoFromStudent(student);
+        }
+
+        // 기존 교사 사용자 확인
+        var teacherOptional = teacherRepository.findByEmail(email);
+        if (teacherOptional.isPresent()) {
+            Teacher teacher = teacherOptional.get();
+            log.info("기존 교사 사용자 로그인: {}", email);
+            return createUserInfoFromTeacher(teacher);
+        }
+
+        // 새로운 사용자 생성 (기본적으로 학생으로 생성)
+        log.info("새로운 사용자 생성: {}", email);
+        
+        Student newStudent = createNewStudent(userInfo);
+        Student savedStudent = studentRepository.save(newStudent);
+        return createUserInfoFromStudent(savedStudent);
+    }
+
+    /**
+     * JWT 토큰 생성
+     */
+    private Map<String, String> generateJwtTokens(AuthResponseDto.UserInfoDto userInfo) {
+        if (userInfo.getGrade() != null) {
+            // Student인 경우
+            Student student = studentRepository.findById(userInfo.getId())
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+            return jwtService.generateTokensFromStudent(student);
+        } else {
+            // Teacher인 경우
+            Teacher teacher = teacherRepository.findById(userInfo.getId())
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+            return jwtService.generateTokensFromTeacher(teacher);
+        }
+    }
+
+    /**
+     * 인증 응답 생성
+     */
+    private AuthResponseDto createAuthResponse(Map<String, String> tokens, AuthResponseDto.UserInfoDto userInfo) {
+        return AuthResponseDto.builder()
+                .accessToken(tokens.get("accessToken"))
+                .refreshToken(tokens.get("refreshToken"))
+                .tokenType(tokens.get("tokenType"))
+                .expiresIn(Long.parseLong(tokens.get("expiresIn")))
+                .userInfo(userInfo)
                 .build();
     }
-    
-    private AuthResponseDto processUserLogin(GoogleUserInfoDto googleUserInfo, GoogleOAuthResponseDto tokenResponse) {
-        // 이메일로 기존 사용자 확인
-        Optional<Student> existingStudent = studentRepository.findByEmail(googleUserInfo.getEmail());
-        Optional<Teacher> existingTeacher = teacherRepository.findByEmail(googleUserInfo.getEmail());
-        
-        if (existingStudent.isPresent()) {
-            return createAuthResponse(existingStudent.get(), tokenResponse);
-        } else if (existingTeacher.isPresent()) {
-            return createAuthResponse(existingTeacher.get(), tokenResponse);
-        } else {
-            // 새로운 사용자 생성 (기본적으로 Student로 생성)
-            Student newStudent = createNewStudent(googleUserInfo);
-            return createAuthResponse(newStudent, tokenResponse);
-        }
-    }
-    
-    private Student createNewStudent(GoogleUserInfoDto googleUserInfo) {
-        Student student = Student.builder()
-                .name(googleUserInfo.getName())
-                .email(googleUserInfo.getEmail())
-                .hashedPassword("")
+
+    /**
+     * 새로운 학생 생성
+     */
+    private Student createNewStudent(Map<String, Object> userInfo) {
+        return Student.builder()
+                .name((String) userInfo.get("name"))
+                .email((String) userInfo.get("email"))
                 .phoneNumber("")
                 .role(UserType.STUDENT)
                 .isEnabled(true)
-                .bio("서울디지텍고 학생")
-                .grade(1)
-                .classroom(1)
-                .studentNumber(1)
-                .build();
-        
-        return studentRepository.save(student);
-    }
-    
-    private AuthResponseDto createAuthResponse(Student student, GoogleOAuthResponseDto tokenResponse) {
-        return AuthResponseDto.builder()
-                .accessToken(tokenResponse.getAccessToken())
-                .refreshToken(tokenResponse.getRefreshToken())
-                .tokenType(tokenResponse.getTokenType())
-                .expiresIn(tokenResponse.getExpiresIn())
-                .userInfo(AuthResponseDto.UserInfoDto.builder()
-                        .id(student.getId())
-                        .email(student.getEmail())
-                        .name(student.getName())
-                        .phoneNumber(student.getPhoneNumber())
-                        .role(student.getRole())
-                        .isEnabled(student.getIsEnabled())
-                        .bio(student.getBio())
-                        .grade(student.getGrade())
-                        .classroom(student.getClassroom().toString())
-                        .studentNumber(student.getStudentNumber())
-                        .build())
+                .grade(1) // 기본값
+                .classroom(1) // 기본값
+                .studentNumber(1) // 기본값
                 .build();
     }
-    
-    private AuthResponseDto createAuthResponse(Teacher teacher, GoogleOAuthResponseDto tokenResponse) {
-        return AuthResponseDto.builder()
-                .accessToken(tokenResponse.getAccessToken())
-                .refreshToken(tokenResponse.getRefreshToken())
-                .tokenType(tokenResponse.getTokenType())
-                .expiresIn(tokenResponse.getExpiresIn())
-                .userInfo(AuthResponseDto.UserInfoDto.builder()
-                        .id(teacher.getId())
-                        .email(teacher.getEmail())
-                        .name(teacher.getName())
-                        .phoneNumber(teacher.getPhoneNumber())
-                        .role(teacher.getRole())
-                        .isEnabled(teacher.getIsEnabled())
-                        .bio(teacher.getBio())
-                        .build())
+
+    /**
+     * Student 엔티티로부터 UserInfoDto 생성
+     */
+    private AuthResponseDto.UserInfoDto createUserInfoFromStudent(Student student) {
+        return AuthResponseDto.UserInfoDto.builder()
+                .id(student.getId())
+                .email(student.getEmail())
+                .name(student.getName())
+                .phoneNumber(student.getPhoneNumber())
+                .role(student.getRole())
+                .isEnabled(student.getIsEnabled())
+                .bio(student.getBio())
+                .grade(student.getGrade())
+                .classroom(student.getClassroom())
+                .studentNumber(student.getStudentNumber())
+                .build();
+    }
+
+    /**
+     * Teacher 엔티티로부터 UserInfoDto 생성
+     */
+    private AuthResponseDto.UserInfoDto createUserInfoFromTeacher(Teacher teacher) {
+        return AuthResponseDto.UserInfoDto.builder()
+                .id(teacher.getId())
+                .email(teacher.getEmail())
+                .name(teacher.getName())
+                .phoneNumber(teacher.getPhoneNumber())
+                .role(teacher.getRole())
+                .isEnabled(teacher.getIsEnabled())
+                .bio(teacher.getBio())
                 .build();
     }
 }

@@ -31,7 +31,7 @@ public class AuthResponseDto {
         private String bio;
         // Student specific fields
         private Integer grade;
-        private String classroom;
+        private Integer classroom;
         private Integer studentNumber;
         // Teacher specific fields
         private String subject;

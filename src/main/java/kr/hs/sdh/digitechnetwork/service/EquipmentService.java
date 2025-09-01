@@ -1,5 +1,6 @@
 package kr.hs.sdh.digitechnetwork.service;
 
+import kr.hs.sdh.digitechnetwork.dto.EquipmentInfoDto;
 import kr.hs.sdh.digitechnetwork.entity.Equipment;
 import kr.hs.sdh.digitechnetwork.enums.EquipmentStatus;
 import kr.hs.sdh.digitechnetwork.dto.EquipmentStatisticsDto;
@@ -71,9 +72,10 @@ public interface EquipmentService {
     
     /**
      * 모든 기자재 조회
+     *
      * @return 기자재 목록
      */
-    List<Equipment> getAllEquipments();
+    List<EquipmentInfoDto> getAllEquipments();
     
     /**
      * 공개된 기자재만 조회

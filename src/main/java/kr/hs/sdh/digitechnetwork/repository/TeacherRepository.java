@@ -31,6 +31,10 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
     @Query("SELECT t FROM Teacher t WHERE t.isEnabled = true")
     List<Teacher> findActiveUsers();
 
+    @Query("SELECT COUNT(t) FROM Teacher t WHERE t.isEnabled = true")
+    Long countActiveUsers();
+
+
     // 역할별 활성 사용자 조회
     @Query("SELECT t FROM Teacher t WHERE t.role = :role AND t.isEnabled = true")
     List<Teacher> findActiveUsersByRole(@Param("role") UserType role);

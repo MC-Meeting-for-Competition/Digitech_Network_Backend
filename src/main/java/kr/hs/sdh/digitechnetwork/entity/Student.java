@@ -28,9 +28,6 @@ public class Student extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private String hashedPassword;
-
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -80,15 +77,8 @@ public class Student extends BaseEntity implements UserDetails {
         this.phoneNumber = phoneNumber;
     }
 
-    public void setHashedPassword(String hashedPassword) {
-        if (hashedPassword == null || hashedPassword.trim().isEmpty()) {
-            throw new IllegalArgumentException("비밀번호는 비어있을 수 없습니다.");
-        }
-        this.hashedPassword = hashedPassword;
-    }
-
     public void setRole(UserType role) {
-        if (role == null || !UserType.STUDENT.equals(role)) {
+        if (!UserType.STUDENT.equals(role)) {
             throw new IllegalArgumentException("Student의 역할은 STUDENT여야 합니다.");
         }
         this.role = role;
@@ -166,7 +156,7 @@ public class Student extends BaseEntity implements UserDetails {
 
     @Override
     public String getPassword() {
-        return hashedPassword;
+        return "";
     }
 
     @Override

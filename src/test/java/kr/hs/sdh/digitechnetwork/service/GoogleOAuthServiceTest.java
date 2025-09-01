@@ -1,5 +1,6 @@
 package kr.hs.sdh.digitechnetwork.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.hs.sdh.digitechnetwork.auth.GoogleOAuth;
 import kr.hs.sdh.digitechnetwork.dto.AuthResponseDto;
 import kr.hs.sdh.digitechnetwork.dto.GoogleOAuthRequestDto;
@@ -11,13 +12,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -53,13 +54,14 @@ class GoogleOAuthServiceTest {
     @BeforeEach
     void setUp() {
         googleOAuthService = new GoogleOAuthServiceImpl(
-                googleOAuth, 
-                studentRepository, 
-                teacherRepository, 
-                restTemplate, 
-                new com.fasterxml.jackson.databind.ObjectMapper()
+                googleOAuth, studentRepository, teacherRepository, restTemplate, new ObjectMapper()
         );
-        
+
+        // 테스트용 설정값 주입
+        ReflectionTestUtils.setField(googleOAuthService, "clientId", "test-client-id");
+        ReflectionTestUtils.setField(googleOAuthService, "clientSecret", "test-client-secret");
+        ReflectionTestUtils.setField(googleOAuthService, "redirectUri", "http://localhost:8081/api/v1/auth/google/callback");
+
         requestDto = GoogleOAuthRequestDto.builder()
                 .code("test_auth_code")
                 .state("test_state")
@@ -69,12 +71,12 @@ class GoogleOAuthServiceTest {
         tokenResponseMap.put("access_token", "test_access_token");
         tokenResponseMap.put("refresh_token", "test_refresh_token");
         tokenResponseMap.put("token_type", "Bearer");
-        tokenResponseMap.put("expires_in", 3600L);
-        tokenResponseMap.put("scope", "profile email");
+        tokenResponseMap.put("expires_in", 3600);
+        tokenResponseMap.put("scope", "openid profile email");
         tokenResponseMap.put("id_token", "test_id_token");
 
         userInfoMap = new HashMap<>();
-        userInfoMap.put("id", "test_google_id");
+        userInfoMap.put("id", "123456789");
         userInfoMap.put("email", "test@example.com");
         userInfoMap.put("name", "Test User");
         userInfoMap.put("given_name", "Test");
@@ -88,7 +90,7 @@ class GoogleOAuthServiceTest {
     @DisplayName("Google OAuth 인증 URL 생성 테스트")
     void getAuthorizationUrl() {
         // given
-        String expectedUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=test&redirect_uri=test&scope=test&response_type=code&access_type=offline&prompt=consent&state=test";
+        String expectedUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=test&redirect_uri=test&scope=openid profile email&response_type=code&access_type=offline&prompt=consent&state=test";
         when(googleOAuth.getRedirectUri()).thenReturn(expectedUrl);
 
         // when
